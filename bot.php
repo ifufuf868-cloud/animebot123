@@ -226,11 +226,11 @@ function bot($method, $datas = [])
 
 function process_anime($cid, $id)
 {
-    global $connect, $anime_kanal;
+    global $connect, $anime_kanal, $content;
 
     // ✅ Faqat raqamli ID bo‘lsa ishlaydi
     if (!is_numeric($id)) {
-        sms($cid, "❗ Noto‘g‘ri ID kiritildi.");
+        sms($cid, "❗ Noto‘g‘ri ID kiritildi.", null);
         return;
     }
 
@@ -258,7 +258,7 @@ function process_anime($cid, $id)
 
 🔍 Qidirishlar soni: $cs
 
-🍿 $anime_kanal",
+🍿 {$anime_kanal[0]}",
             'parse_mode' => "html",
             'reply_markup' => json_encode([
                 'inline_keyboard' => [
@@ -683,7 +683,7 @@ if (strpos($data, "chack=") === 0) {
         process_anime($cid2, $id);
     } else {
         del();
-        sms($cid2, "⚠ Obuna aniqlanmadi. Iltimos, kanallarga obuna bo‘ling va qayta urinib ko‘ring.");
+        sms($cid2, "⚠ Obuna aniqlanmadi. Iltimos, kanallarga obuna bo‘ling va qayta urinib ko‘ring.", null);
     }
 
     exit();
@@ -695,7 +695,7 @@ if (strpos($data, "chack=") === 0) {
 //<---- @obito_us ---->//
 
 if ($text == "/help") {
-    sms($cid, "ℹ Foydalanish uchun buyrug‘ingizni kiriting.");
+    sms($cid, "ℹ Foydalanish uchun buyrug‘ingizni kiriting.", null);
     exit();
 }
 
@@ -711,17 +711,17 @@ if (strpos($data, "anime=") === 0) {
 
 function show_anime($cid, $id)
 {
-    global $connect, $anime_kanal;
+    global $connect, $anime_kanal, $content;
 
     if (!joinchat($cid, $id)) {
-        sms($cid, "⚠ Botdan foydalanish uchun kanalga obuna bo‘ling!");
+        sms($cid, "⚠ Botdan foydalanish uchun kanalga obuna bo‘ling!", null);
         return;
     }
 
     $rew = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM animelar WHERE id = $id"));
 
     if (!$rew) {
-        sms($cid, "❌ Ma'lumot topilmadi.");
+        sms($cid, "❌ Ma'lumot topilmadi.", null);
         return;
     }
 
@@ -1422,6 +1422,7 @@ function createPostText($rew)
 
 function sendAnimePost($chat_id, $rew, $web_url)
 {
+    global $content;
     $type = strtoupper($rew['rams'][0]) === 'B' ? 'sendVideo' : 'sendPhoto';
     $key = $type === 'sendVideo' ? 'video' : 'photo';
 
