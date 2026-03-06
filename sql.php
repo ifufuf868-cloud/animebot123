@@ -79,3 +79,18 @@ mysqli_query($connect, "CREATE TABLE IF NOT EXISTS `animelar` (
   `aniType` text NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;");
+
+mysqli_query($connect, "CREATE TABLE IF NOT EXISTS `bot` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user` varchar(250) NOT NULL,
+  `holat` varchar(10) NOT NULL DEFAULT 'On',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;");
+
+// Initialize bot row if missing
+if (isset($bot)) {
+  $check_bot = mysqli_query($connect, "SELECT * FROM bot WHERE user = '$bot'");
+  if (mysqli_num_rows($check_bot) == 0) {
+    mysqli_query($connect, "INSERT INTO bot (user, holat) VALUES ('$bot', 'On')");
+  }
+}

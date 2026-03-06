@@ -479,6 +479,7 @@ if ($kabinet_data) {
     $pul2 = $kabinet_data['pul2'];
     $odam = $kabinet_data['odam'];
     $ban = $kabinet_data['ban'];
+} else {
     $pul = 0;
     $pul2 = 0;
     $odam = 0;
@@ -637,7 +638,7 @@ if (isset($message)) {
 
 if ($text == "/start" or $text == "◀️ Orqaga") {
     sms($cid, $start, $menyu);
-    unlink("step/$cid.step");
+    @unlink("step/$cid.step");
     exit();
 }
 
