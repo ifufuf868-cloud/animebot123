@@ -406,8 +406,8 @@ if ($message) {
     debug_log("Incoming Message - ID: $uid, Text: $text");
     $message_id = $message->message_id;
     $name = $message->from->first_name;
-    $familya = $message->from->last_name;
-    $username = $message->from->username;
+    $familya = $message->from->last_name ?? "";
+    $username = $message->from->username ?? "";
 } elseif ($callback_query) {
     $uid = $callback_query->from->id;
     $cid = $cid2;
@@ -415,8 +415,8 @@ if ($message) {
     debug_log("Incoming Callback - ID: $uid, Data: $data");
     $message_id = $mid2;
     $name = $callback_query->from->first_name;
-    $familya = $callback_query->from->last_name;
-    $username = $callback_query->from->username;
+    $familya = $callback_query->from->last_name ?? "";
+    $username = $callback_query->from->username ?? "";
 } else {
     debug_log("Incoming Update (Other/Unknown)");
     $uid = null;
@@ -479,10 +479,10 @@ if ($kabinet_data) {
     $pul2 = $kabinet_data['pul2'];
     $odam = $kabinet_data['odam'];
     $ban = $kabinet_data['ban'];
-} else {
     $pul = 0;
     $pul2 = 0;
     $odam = 0;
+    $ban = "unban";
 }
 
 $pul3 = $pul;
@@ -584,16 +584,7 @@ if ($data) {
 }
 
 if (isset($message)) {
-    if (!$connect) {
-        bot('sendMessage', [
-            'chat_id' => $cid,
-            'text' => "⚠️ <b>Xatolik!</b>
-
-        <i>Botdan ro'yxatdan o'tish uchun, /start buyrug'ini yuboring!</i>",
-            'parse_mode' => 'html',
-        ]);
-        exit();
-    }
+    // Redundant check removed
 }
 
 if ($text) {
@@ -632,7 +623,7 @@ if (isset($message)) {
     $result = mysqli_query($connect, "SELECT * FROM user_id WHERE user_id = $cid");
     $row = mysqli_fetch_assoc($result);
     if (!$row) {
-        mysqli_query($connect, "INSERT INTO user_id(`user_id`,`status`,`sana`) VALUES ('$cid','Oddiy','$sana')");
+        mysqli_query($connect, "INSERT INTO user_id(`user_id`,`status`,`sana`,`refid`) VALUES ('$cid','Oddiy','$sana','0')");
     }
 }
 

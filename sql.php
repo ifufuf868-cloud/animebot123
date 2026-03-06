@@ -22,7 +22,7 @@ mysqli_query($connect, "CREATE TABLE IF NOT EXISTS `user_id` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` varchar(250) NOT NULL,
   `status` text NOT NULL,
-  `refid` varchar(11) NOT NULL,
+  `refid` varchar(11) NOT NULL DEFAULT '0',
   `sana` varchar(250) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;");
