@@ -87,6 +87,15 @@ mysqli_query($connect, "CREATE TABLE IF NOT EXISTS `bot` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;");
 
+mysqli_query($connect, "CREATE TABLE IF NOT EXISTS `channels` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `channelId` varchar(250) NOT NULL,
+  `channelType` varchar(50) NOT NULL,
+  `channelLink` text NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;");
+
+
 // Initialize bot row if missing
 if (isset($bot)) {
   $check_bot = mysqli_query($connect, "SELECT * FROM bot WHERE user = '$bot'");

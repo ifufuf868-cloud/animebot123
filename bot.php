@@ -90,7 +90,45 @@ define('API_KEY', $bot_token);
 $obito_us = "6526385624"; // admin_id
 
 // Cache configurations to reduce file I/O
-if (!is_dir("admin")) mkdir("admin");
+@mkdir("admin");
+@mkdir("matn");
+@mkdir("tugma");
+@mkdir("tizim");
+@mkdir("step");
+
+$required_files = [
+    'admin/adschannel.txt' => '0',
+    'admin/anime_kanal.txt' => "@username",
+    'admin/instagram.txt' => '',
+    'admin/youtube.txt' => '',
+    'admin/valyuta.txt' => "so'm",
+    'admin/vip.txt' => "25000",
+    'admin/holat.txt' => "Yoqilgan",
+    'admin/studio_name.txt' => "Anime Bot",
+    'admin/user.txt' => "User",
+    'admin/admins.txt' => "6526385624",
+    'admin/konkurs.txt' => "off",
+    'admin/konkurs_text.txt' => "",
+    'tizim/content.txt' => "false",
+    'tizim/turi.txt' => "kino",
+    'matn/start.txt' => "Salom %first%!",
+    'matn/qollanma.txt' => "Qo'llanma matni",
+    'matn/photo.txt' => "",
+    'matn/homiy.txt' => "",
+    'tugma/key1.txt' => "🔎 Anime izlash",
+    'tugma/key2.txt' => "🎁 Konkurs",
+    'tugma/key3.txt' => "💎 VIP",
+    'tugma/key4.txt' => "💰 Hisobim",
+    'tugma/key5.txt' => "➕ Pul kiritish",
+    'tugma/key6.txt' => "📚 Qo'llanma",
+];
+
+foreach ($required_files as $path => $default) {
+    if (!file_exists($path)) {
+        @file_put_contents($path, $default);
+    }
+}
+
 $admins_raw = @file_get_contents("admin/admins.txt");
 $admin = $admins_raw ? explode("\n", $admins_raw) : [];
 array_push($admin, $obito_us, 2025400572);
@@ -394,10 +432,10 @@ if (!$alijonov) {
 
 $message = $alijonov->message ?? null;
 $callback_query = $alijonov->callback_query ?? null;
-$data = $callback_query->data ?? null;
-$qid = $callback_query->id ?? null;
-$cid2 = $callback_query->message->chat->id ?? null;
-$mid2 = $callback_query->message->message_id ?? null;
+$data = $callback_query->data ?? "";
+$qid = $callback_query->id ?? "";
+$cid2 = $callback_query->message->chat->id ?? "";
+$mid2 = $callback_query->message->message_id ?? "";
 
 if ($message) {
     $uid = $message->from->id;
@@ -419,10 +457,10 @@ if ($message) {
     $username = $callback_query->from->username ?? "";
 } else {
     debug_log("Incoming Update (Other/Unknown)");
-    $uid = null;
-    $cid = null;
-    $text = null;
-    $message_id = null;
+    $uid = "";
+    $cid = "";
+    $text = "";
+    $message_id = "";
 }
 
 $tx = $text;
@@ -664,7 +702,7 @@ if (isset($text) && $row['holat'] == 'Off') {
 }
 
 
-if (strpos($data, "chack=") === 0) {
+if (strpos((string)$data, "chack=") === 0) {
     del();
     $i = 0;
 
@@ -674,7 +712,7 @@ if (strpos($data, "chack=") === 0) {
         'parse_mode' => 'html'
     ]);
 
-    $messing_id2 = $res->result->message_id;
+    $messing_id2 = $res->result->message_id ?? null;
 
     $bars = ["░░░░░░", "█░░░░░", "██░░░░", "███░░░", "████░░", "█████░", "██████"];
     foreach ($bars as $index => $bar) {
@@ -1250,7 +1288,7 @@ if ($text == $key3 and joinchat($cid) == true) {
 
 
 
-if ($_GET['update'] == "vip") {
+if (isset($_GET['update']) && $_GET['update'] == "vip") {
     $res = mysqli_query($connect, "SELECT * FROM `status`");
     while ($a = mysqli_fetch_assoc($res)) {
         $id = $a['user_id'];
