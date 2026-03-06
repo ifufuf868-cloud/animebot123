@@ -22,6 +22,7 @@ set_exception_handler(function ($e) {
 
 // Global Error Handler
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+    if (!(error_reporting() & $errno)) return false;
     debug_log("Error [$errno]: $errstr in $errfile on line $errline");
     return false; // Let standard error handler run as well
 });
