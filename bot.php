@@ -1,49 +1,69 @@
 <?php
 ob_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+error_reporting(0);
 date_Default_timezone_set('Asia/Tashkent');
+
+// Optimization: Acknowledge Telegram early for better performance
+if (file_get_contents('php://input')) {
+    ignore_user_abort(true);
+    set_time_limit(0);
+    if (function_exists('fastcgi_finish_request')) {
+        fastcgi_finish_request();
+    }
+}
 
 /*
 @ITACHI_UCHIHA_SONO_SHARINGAN
 @Fav_ke
 
-<---- 
-Asosiy dasturchi: @obito_us 
-Tog'irladilar: @Boltaboyev_Rahmatillo va @Fav_ke
----->
+<----
+    Asosiy dasturchi: @obito_us
+    Tog'irladilar: @Boltaboyev_Rahmatillo va @Fav_ke
+    ---->
 
--------------------
-Tog'irlanagn bo'limlar
+    -------------------
+    Tog'irlanagn bo'limlar
 
-% == Tog'irlanganlik darajasi (taxminiy)
+    % == Tog'irlanganlik darajasi (taxminiy)
 
-1. Zayafka 100% ishlaydi
-2. Xabar yuborish ishlaydi (Lekin men ishlatib kurmadi.)
-3. Post yuborish (Xoxlagancha kanalga 1 vaqtda) --> 100%
-4. Majburiy obunaga Ijtimoi tarmoq ulash (Instagram va YouTube (faqat 2 ta)) --> 100%
-5. Kontent cheklash yoki ulashish admin panel orqali --> 100%
-6. Olinga va Orqaga bo'limi --> 100%
-7. Birlamchi sozlamlar --> 100%
-8. Anime tahrirlash --> 100%
-9. Anime rasmini yoki videosini tahrirlash --> 100%
-10. Video orqali Anime qo'shish --> 100%
-11. Fanadub nomi anime qo'shishda --> 100%
-12 Konkurs sozlamalari --> 100%
---------------
+    1. Zayafka 100% ishlaydi
+    2. Xabar yuborish ishlaydi (Lekin men ishlatib kurmadi.)
+    3. Post yuborish (Xoxlagancha kanalga 1 vaqtda) --> 100%
+    4. Majburiy obunaga Ijtimoi tarmoq ulash (Instagram va YouTube (faqat 2 ta)) --> 100%
+    5. Kontent cheklash yoki ulashish admin panel orqali --> 100%
+    6. Olinga va Orqaga bo'limi --> 100%
+    7. Birlamchi sozlamlar --> 100%
+    8. Anime tahrirlash --> 100%
+    9. Anime rasmini yoki videosini tahrirlash --> 100%
+    10. Video orqali Anime qo'shish --> 100%
+    11. Fanadub nomi anime qo'shishda --> 100%
+    12 Konkurs sozlamalari --> 100%
+    --------------
 
-*/
+    */
 
 $bot_token = "8764008152:AAFEJYwsOn-yKBzGnhshshWACi7EnP5qyGM"; // bot token
-
 define('API_KEY', $bot_token);
 $obito_us = "6526385624"; // admin_id
-$admins = file_get_contents("admin/admins.txt");
-$admin = explode("\n", $admins);
-$studio_name = file_get_contents("admin/studio_name.txt");
+
+// Cache configurations to reduce file I/O
+if (!is_dir("admin")) mkdir("admin");
+$admins_raw = @file_get_contents("admin/admins.txt");
+$admin = $admins_raw ? explode("\n", $admins_raw) : [];
 array_push($admin, $obito_us, 2025400572);
-$user = file_get_contents("admin/user.txt");
-$bot = bot('getme', ['bot'])->result->username;
+
+$studio_name = @file_get_contents("admin/studio_name.txt") ?: "Studio Name";
+$user = @file_get_contents("admin/user.txt") ?: "User";
+
+// Cache bot username to avoid getMe call on every request
+if (!file_exists("admin/bot_username.txt")) {
+    $bot_data = bot('getme');
+    $bot = $bot_data->result->username ?? "bot_username";
+    if ($bot != "bot_username") file_put_contents("admin/bot_username.txt", $bot);
+} else {
+    $bot = file_get_contents("admin/bot_username.txt");
+}
+
 $soat = date('H:i');
 $sana = date("d.m.Y");
 
@@ -106,7 +126,7 @@ function joinchat($userId, $key = null)
                 $noSubs++;
                 $buttons[] = [
                     'text' => "📨 So‘rov yuborish ($noSubs)",
-                    'url'  => "https://t.me/$bot?start=joinreq_$channelId"
+                    'url' => "https://t.me/$bot?start=joinreq_$channelId"
                 ];
             }
         } else {
@@ -121,7 +141,7 @@ function joinchat($userId, $key = null)
                 $channelTitle = $chatInfo->result->title ?? "Kanal";
                 $buttons[] = [
                     'text' => $channelTitle,
-                    'url'  => $channelLink
+                    'url' => $channelLink
                 ];
             }
         }
@@ -251,15 +271,15 @@ function process_anime($cid, $id)
             $media_key => $file_id,
             'caption' => "<b>🎬 Nomi: {$rew['nom']}</b>
 
-🎥 Qismi: {$rew['qismi']}
-🌍 Davlati: {$rew['davlat']}
-🇺🇿 Tili: {$rew['tili']}
-📆 Yili: {$rew['yili']}
-🎞 Janri: {$rew['janri']}
+    🎥 Qismi: {$rew['qismi']}
+    🌍 Davlati: {$rew['davlat']}
+    🇺🇿 Tili: {$rew['tili']}
+    📆 Yili: {$rew['yili']}
+    🎞 Janri: {$rew['janri']}
 
-🔍 Qidirishlar soni: $cs
+    🔍 Qidirishlar soni: $cs
 
-🍿 {$anime_kanal[0]}",
+    🍿 {$anime_kanal[0]}",
             'parse_mode' => "html",
             'reply_markup' => json_encode([
                 'inline_keyboard' => [
@@ -286,8 +306,8 @@ function containsEmoji($string)
     $emojiPattern .= '|[\x{1F800}-\x{1F8FF}]'; // Suv belgilari
     $emojiPattern .= '|[\x{1F900}-\x{1F9FF}]'; // Odatdagilar
     $emojiPattern .= '|[\x{1FA00}-\x{1FA6F}]'; // Qisqichbaqasimon belgilar
-    $emojiPattern .= '|[\x{2600}-\x{26FF}]';   // Turli xil belgilar va piktograflar
-    $emojiPattern .= '|[\x{2700}-\x{27BF}]';   // Dingbatlar
+    $emojiPattern .= '|[\x{2600}-\x{26FF}]'; // Turli xil belgilar va piktograflar
+    $emojiPattern .= '|[\x{2700}-\x{27BF}]'; // Dingbatlar
     $emojiPattern .= '/u';
 
     // Regex orqali tekshirish
@@ -321,158 +341,95 @@ function adminsAlert($message)
 
 $alijonov = json_decode(file_get_contents('php://input'));
 $message = $alijonov->message;
-$cid = $message->chat->id;
-$name = $message->chat->first_name;
-$tx = $message->text;
-$step = file_get_contents("step/$cid.step");
-$steps = file_get_contents("steps/$cid.steps");
-$mid = $message->message_id;
-$type = $message->chat->type;
-$text = $message->text;
-$uid = $message->from->id;
-$name = $message->from->first_name;
-$familya = $message->from->last_name;
-$bio = $message->from->about;
-$username = $message->from->username;
-$chat_id = $message->chat->id;
-$message_id = $message->message_id;
-$reply = $message->reply_to_message->text;
-$nameru = "<a href='tg://user?id=$uid'>$name $familya</a>";
-
-$botdel = $alijonov->my_chat_member->new_chat_member;
-$botdelid = $alijonov->my_chat_member->from->id;
-$userstatus = $botdel->status;
-
-//inline uchun metodlar
 $data = $alijonov->callback_query->data;
 $qid = $alijonov->callback_query->id;
-$id = $alijonov->inline_query->id;
-$query = $alijonov->inline_query->query;
-$query_id = $alijonov->inline_query->from->id;
 $cid2 = $alijonov->callback_query->message->chat->id;
 $mid2 = $alijonov->callback_query->message->message_id;
-$callfrid = $alijonov->callback_query->from->id;
-$callname = $alijonov->callback_query->from->first_name;
-$calluser = $alijonov->callback_query->from->username;
-$surname = $alijonov->callback_query->from->last_name;
-$about = $alijonov->callback_query->from->about;
-$nameuz = "<a href='tg://user?id=$callfrid'>$callname $surname</a>";
 
-if (isset($data)) {
-    $chat_id = $cid2;
-    $message_id = $mid2;
-}
+$uid = $message->from->id ?: $alijonov->callback_query->from->id;
+$cid = $message->chat->id ?: $cid2;
+$chat_id = $data ? $cid2 : $cid;
+$text = $message->text ?: $alijonov->callback_query->message->text;
+$tx = $text;
+$message_id = $message->message_id ?: $mid2;
+
+$name = $message->from->first_name ?: $alijonov->callback_query->from->first_name;
+$familya = $message->from->last_name ?: $alijonov->callback_query->from->last_name;
+$username = $message->from->username ?: $alijonov->callback_query->from->username;
+$nameru = "<a href='tg://user?id=$uid'>$name $familya</a>";
+
+$step = @file_get_contents("step/$chat_id.step");
 
 $photo = $message->photo;
 $file = $photo[count($photo) - 1]->file_id;
 
-//tugmalar
-if (file_get_contents("tugma/key1.txt")) {
+// Optimization: Load keys and settings once to reduce file I/O
+$key1 = @file_get_contents("tugma/key1.txt") ?: "🔎 Anime izlash";
+$key2 = @file_get_contents("tugma/key2.txt") ?: "💎 VIP";
+$key3 = @file_get_contents("tugma/key3.txt") ?: "💰 Hisobim";
+$key4 = @file_get_contents("tugma/key4.txt") ?: "➕ Pul kiritish";
+$key5 = @file_get_contents("tugma/key5.txt") ?: "📚 Qo'llanma";
+$key6 = @file_get_contents("tugma/key6.txt") ?: "💵 Reklama va Homiylik";
+
+$valyuta = @file_get_contents("admin/valyuta.txt") ?: "so'm";
+$narx = @file_get_contents("admin/vip.txt") ?: "25000";
+$holat = @file_get_contents("admin/holat.txt") ?: "Yoqilgan";
+$anime_kanal_raw = @file("admin/anime_kanal.txt", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+$anime_kanal = $anime_kanal_raw ?: ["@username"];
+$content_val = @file_get_contents("tizim/content.txt") ?: "false";
+
+$start_raw = @file_get_contents("matn/start.txt") ?: "✨";
+$start = str_replace(["%first%", "%id%", "%botname%", "%hour%", "%date%"], [$name, $cid, $bot, $soat, $sana], $start_raw);
+$qollanma_raw = @file_get_contents("matn/qollanma.txt") ?: "Qo'llanma";
+$qollanma = str_replace(["%first%", "%id%", "%hour%", "%date%", "%user%", "%botname%"], [$name, $cid, $soat, $sana, $user, $bot], $qollanma_raw);
+
+$photo_msg = @file_get_contents("matn/photo.txt") ?: "";
+$homiy = @file_get_contents("matn/homiy.txt") ?: "";
+$konkurs = @file_get_contents("admin/konkurs.txt") ?: "off";
+$konkursText = @file_get_contents("admin/konkurs_text.txt") ?: "";
+
+// Optimized data fetching: Combined queries and cached values
+$user_data = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM user_id WHERE user_id = '$chat_id'"));
+if ($user_data) {
+    $user_id = $user_data['user_id'];
+    $status = $user_data['status'];
+    $taklid_id = $user_data['refid'];
+    $from_id = $user_data['id'];
+    $usana = $user_data['sana'];
 } else {
-    if (file_put_contents("tugma/key1.txt", "🔎 Anime izlash"));
+    $status = "Oddiy";
 }
-if (file_get_contents("tugma/key2.txt")) {
+
+$kabinet_data = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM kabinet WHERE user_id = '$chat_id'"));
+if ($kabinet_data) {
+    $k_id = $kabinet_data['user_id'];
+    $pul = $kabinet_data['pul'];
+    $pul2 = $kabinet_data['pul2'];
+    $odam = $kabinet_data['odam'];
+    $ban = $kabinet_data['ban'];
 } else {
-    if (file_put_contents("tugma/key2.txt", "💎 VIP"));
-}
-if (file_get_contents("tugma/key3.txt")) {
-} else {
-    if (file_put_contents("tugma/key3.txt", "💰 Hisobim"));
-}
-if (file_get_contents("tugma/key4.txt")) {
-} else {
-    if (file_put_contents("tugma/key4.txt", "➕ Pul kiritish"));
-}
-if (file_get_contents("tugma/key5.txt")) {
-} else {
-    if (file_put_contents("tugma/key5.txt", "📚 Qo'llanma"));
-}
-if (file_get_contents("tugma/key6.txt")) {
-} else {
-    if (file_put_contents("tugma/key6.txt", "💵 Reklama va Homiylik"));
+    $pul = 0;
+    $pul2 = 0;
+    $odam = 0;
 }
 
-//pul va referal sozlamalar
+$pul3 = $pul;
+$odam2 = $odam;
 
-if (file_get_contents("admin/valyuta.txt")) {
-} else {
-    if (file_put_contents("admin/valyuta.txt", "so'm"));
+$test = @file_get_contents("step/test.txt");
+$test1 = @file_get_contents("step/test1.txt");
+$test2 = @file_get_contents("step/test2.txt");
+$turi = @file_get_contents("tizim/turi.txt");
+$kanal = @file_get_contents("admin/kanal.txt");
+
+// Only create directories if they don't exist
+if (!is_dir("tizim")) {
+    @mkdir("tizim");
+    @mkdir("step");
+    @mkdir("admin");
+    @mkdir("tugma");
+    @mkdir("matn");
 }
-
-if (file_get_contents("admin/vip.txt")) {
-} else {
-    if (file_put_contents("admin/vip.txt", "25000"));
-}
-
-if (file_get_contents("admin/holat.txt")) {
-} else {
-    if (file_put_contents("admin/holat.txt", "Yoqilgan"));
-}
-
-if (file_exists("admin/anime_kanal.txt") == false) {
-    file_put_contents("admin/anime_kanal.txt", "@username");
-}
-if (file_exists("tizim/content.txt") == false) {
-    file_put_contents("tizim/content.txt", "false");
-}
-
-//matnlar
-if (file_get_contents("matn/start.txt")) {
-} else {
-    if (file_put_contents("matn/start.txt", "✨"));
-}
-
-$res = mysqli_query($connect, "SELECT*FROM user_id WHERE user_id=$chat_id");
-while ($a = mysqli_fetch_assoc($res)) {
-    $user_id = $a['user_id'];
-    $status = $a['status'];
-    $taklid_id = $a['refid'];
-    $from_id = $a['id'];
-    $usana = $a['sana'];
-}
-
-$res = mysqli_query($connect, "SELECT*FROM kabinet WHERE user_id=$chat_id");
-while ($a = mysqli_fetch_assoc($res)) {
-    $k_id = $a['user_id'];
-    $pul = $a['pul'];
-    $pul2 = $a['pul2'];
-    $odam = $a['odam'];
-    $ban = $a['ban'];
-}
-
-$key1 = file_get_contents("tugma/key1.txt");
-$key2 = file_get_contents("tugma/key2.txt");
-$key3 = file_get_contents("tugma/key3.txt");
-$key4 = file_get_contents("tugma/key4.txt");
-$key5 = file_get_contents("tugma/key5.txt");
-$key6 = file_get_contents("tugma/key6.txt");
-
-$test = file_get_contents("step/test.txt");
-$test1 = file_get_contents("step/test1.txt");
-$test2 = file_get_contents("step/test2.txt");
-$turi = file_get_contents("tizim/turi.txt");
-$anime_kanal = file("admin/anime_kanal.txt", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-
-$narx = file_get_contents("admin/vip.txt");
-$kanal = file_get_contents("admin/kanal.txt");
-$valyuta = file_get_contents("admin/valyuta.txt");
-$start = str_replace(["%first%", "%id%", "%botname%", "%hour%", "%date%"], [$name, $cid, $bot, $soat, $sana], file_get_contents("matn/start.txt"));
-$qollanma = str_replace(["%first%", "%id%", "%hour%", "%date%", "%user%", "%botname%",], [$name, $cid, $soat, $sana, $user, $bot], file_get_contents("matn/qollanma.txt"));
-$from_id = mysqli_fetch_assoc(mysqli_query($connect, "SELECT*FROM user_id WHERE user_id = $cid2"))['id'];
-$pul3 = mysqli_fetch_assoc(mysqli_query($connect, "SELECT*FROM kabinet WHERE user_id = $cid2"))['pul'];
-$odam2 = mysqli_fetch_assoc(mysqli_query($connect, "SELECT*FROM kabinet WHERE user_id = $cid2"))['odam'];
-$photo = file_get_contents("matn/photo.txt");
-$homiy = file_get_contents("matn/homiy.txt");
-$holat = file_get_contents("admin/holat.txt");
-$konkurs = file_get_contents("admin/konkurs.txt");
-$konkursText = file_get_contents("admin/konkurs_text.txt");
-$content = get("tizim/content.txt");
-
-mkdir("tizim");
-mkdir("step");
-mkdir("admin");
-mkdir("tugma");
-mkdir("matn");
 
 $panel = json_encode([
     'resize_keyboard' => true,
@@ -540,7 +497,7 @@ if (in_array($cid2, $admin)) {
 }
 
 //<---- @obito_us ---->//
-// Kod @ITACHI_UCHIHA_SONO_SHARINGAN tomonidan tog'irlandi 
+// Kod @ITACHI_UCHIHA_SONO_SHARINGAN tomonidan tog'irlandi
 if ($text) {
     if ($ban == "ban") {
         exit();
@@ -560,7 +517,7 @@ if (isset($message)) {
             'chat_id' => $cid,
             'text' => "⚠️ <b>Xatolik!</b>
 
-<i>Botdan ro'yxatdan o'tish uchun, /start buyrug'ini yuboring!</i>",
+        <i>Botdan ro'yxatdan o'tish uchun, /start buyrug'ini yuboring!</i>",
             'parse_mode' => 'html',
         ]);
         exit();
@@ -575,7 +532,7 @@ if ($text) {
                 'chat_id' => $cid,
                 'text' => "⛔️ <b>Bot vaqtinchalik o'chirilgan!</b>
 
-<i>Botda ta'mirlash ishlari olib borilayotgan bo'lishi mumkin!</i>",
+        <i>Botda ta'mirlash ishlari olib borilayotgan bo'lishi mumkin!</i>",
                 'parse_mode' => 'html',
             ]);
             exit();
@@ -591,7 +548,7 @@ if ($data) {
                 'callback_query_id' => $qid,
                 'text' => "⛔️ Bot vaqtinchalik o'chirilgan!
 
-Botda ta'mirlash ishlari olib borilayotgan bo'lishi mumkin!",
+        Botda ta'mirlash ishlari olib borilayotgan bo'lishi mumkin!",
                 'show_alert' => true,
             ]);
             exit();
@@ -629,13 +586,8 @@ if ($data == "result") {
     }
 }
 
-$servername = getenv('MYSQLHOST') ?: "localhost";
-$username = getenv('MYSQLUSER') ?: "uztopanime";
-$password = getenv('MYSQLPASSWORD') ?: "uztopanime123";
-$database = getenv('MYSQLDATABASE') ?: $username;
-$port = getenv('MYSQLPORT') ?: "3306";
-
-$connecting = mysqli_connect($servername, $username, $password, $database, $port);
+// Unified database connection
+$connecting = $connect;
 
 $result = mysqli_query($connecting, "SELECT * FROM bot WHERE user = '$bot'");
 $row = mysqli_fetch_assoc($result);
@@ -740,15 +692,15 @@ function show_anime($cid, $id)
         $media_key => $file_id,
         'caption' => "<b>🎬 Nomi: {$rew['nom']}</b>
 
-🎥 Qismi: {$rew['qismi']}
-🌍 Davlati: {$rew['davlat']}
-🇺🇿 Tili: {$rew['tili']}
-📆 Yili: {$rew['yili']}
-🎞 Janri: {$rew['janri']}
+            🎥 Qismi: {$rew['qismi']}
+            🌍 Davlati: {$rew['davlat']}
+            🇺🇿 Tili: {$rew['tili']}
+            📆 Yili: {$rew['yili']}
+            🎞 Janri: {$rew['janri']}
 
-🔍 Qidirishlar soni: $cs
+            🔍 Qidirishlar soni: $cs
 
-🍿 {$anime_kanal[0]}",
+            🍿 {$anime_kanal[0]}",
         'parse_mode' => "html",
         'reply_markup' => json_encode([
             'inline_keyboard' => [
@@ -835,7 +787,7 @@ if ($data == "searchByImage") {
 
 
 
-//Rasm orqali qidirish 
+//Rasm orqali qidirish
 
 if ($data == "topViewers") {
     if ($status == "VIP") {
@@ -873,15 +825,15 @@ if (mb_stripos($data, "loadAnime=") !== false) {
         $media_key => $rew['rams'],
         'caption' => "<b>🎬 Nomi: $rew[nom]</b>
 
-🎥 Qismi: $rew[qismi]
-🌍 Davlati: $rew[davlat]
-🇺🇿 Tili: $rew[tili]
-📆 Yili: $rew[yili]
-🎞 Janri: $rew[janri]
+            🎥 Qismi: $rew[qismi]
+            🌍 Davlati: $rew[davlat]
+            🇺🇿 Tili: $rew[tili]
+            📆 Yili: $rew[yili]
+            🎞 Janri: $rew[janri]
 
-🔍Qidirishlar soni: $rew[qidiruv]
+            🔍Qidirishlar soni: $rew[qidiruv]
 
-🍿 $anime_kanal",
+            🍿 $anime_kanal",
         'parse_mode' => "html",
         'reply_markup' => json_encode([
             'inline_keyboard' => [
@@ -1033,14 +985,14 @@ if (mb_stripos($data, "pagenation=") !== false) {
 if ($data == "allAnimes") {
     $result = mysqli_query($connect, "SELECT * FROM animelar");
     $count = mysqli_num_rows($result);
-    $text = "$bot anime botida mavjud bo'lgan barcha animelar ro'yxati 
-Barcha animelar soni : $count ta\n\n";
+    $text = "$bot anime botida mavjud bo'lgan barcha animelar ro'yxati
+            Barcha animelar soni : $count ta\n\n";
     $counter = 1;
     while ($row = mysqli_fetch_assoc($result)) {
         $text .= "---- | $counter | ----
-Anime kodi : $row[id]
-Nomi : $row[nom]
-Janri : $row[janri]\n\n";
+            Anime kodi : $row[id]
+            Nomi : $row[nom]
+            Janri : $row[janri]\n\n";
         $counter++;
     }
     put("step/animes_list_$cid2.txt", $text);
@@ -1078,15 +1030,15 @@ if ($step == "searchByCode") {
             $media_key => $rew['rams'],
             'caption' => "<b>🎬 Nomi: $rew[nom]</b>
 
-🎥 Qismi: $rew[qismi]
-🌍 Davlati: $rew[davlat]
-🇺🇿 Tili: $rew[tili]
-📆 Yili: $rew[yili]
-🎞 Janri: $rew[janri]
+            🎥 Qismi: $rew[qismi]
+            🌍 Davlati: $rew[davlat]
+            🇺🇿 Tili: $rew[tili]
+            📆 Yili: $rew[yili]
+            🎞 Janri: $rew[janri]
 
-🔍Qidirishlar soni: $cs
+            🔍Qidirishlar soni: $cs
 
-🍿 $anime_kanal",
+            🍿 $anime_kanal",
             'parse_mode' => "html",
             'reply_markup' => json_encode([
                 'inline_keyboard' => [
@@ -1099,7 +1051,7 @@ if ($step == "searchByCode") {
     } else {
         sms($cid, "<b>[ $text ] kodiga tegishli anime topilmadi😔</b>
 
-• Boshqa Kod yuboring", null);
+            • Boshqa Kod yuboring", null);
         exit();
     }
 }
@@ -1108,7 +1060,7 @@ if ($data == "searchByGenre") {
     if ($status == "VIP") {
         del();
         sms($cid2, "<b>🔍 Qidirish uchun anime janrini yuboring.</b>
-📌Namuna: Syonen", $back);
+            📌Namuna: Syonen", $back);
         put("step/$cid2.step", $data);
     } else {
         bot('answerCallbackQuery', [
@@ -1136,7 +1088,7 @@ if ($step == "searchByGenre") {
         if (!$c) {
             sms($cid, "<b>[ $text ] jariga tegishli anime topilmadi😔</b>
 
-• Boshqa janrni alohida yuboring", null);
+            • Boshqa janrni alohida yuboring", null);
             exit();
         } else {
             bot('sendMessage', [
@@ -1157,12 +1109,12 @@ if (($text == $key2 or $text == "/start anipass") and joinchat($cid) == 1) {
     if ($status == "Oddiy") {
         sms($cid, "<b>$key2'ga ulanish
 
-{$key2}da qanday imkoniyatlar bor?
-• VIP kanal uchun 1martalik havola beriladi
-• Hech qanday reklamalarsiz botdan foydalanasiz
-• Majburiy obunalik soʻralmaydi</b>
+                    {$key2}da qanday imkoniyatlar bor?
+                    • VIP kanal uchun 1martalik havola beriladi
+                    • Hech qanday reklamalarsiz botdan foydalanasiz
+                    • Majburiy obunalik soʻralmaydi</b>
 
-$key2 haqida batafsil Qo'llanma boʻlimidan olishiz mumkin!", json_encode([
+                $key2 haqida batafsil Qo'llanma boʻlimidan olishiz mumkin!", json_encode([
             'inline_keyboard' => [
                 [['text' => "30 kun - $narx $valyuta", 'callback_data' => "shop=30"]],
                 [['text' => "60 kun - " . ($narx * 2) . " $valyuta", 'callback_data' => "shop=60"]],
@@ -1175,7 +1127,7 @@ $key2 haqida batafsil Qo'llanma boʻlimidan olishiz mumkin!", json_encode([
         $expire = date('d.m.Y', strtotime("+$aktiv_kun days"));
         sms($cid, "<b>Siz $key2 sotib olgansiz!</b>
 
-⏳ Amal qilish muddati $expire gacha", json_encode([
+                ⏳ Amal qilish muddati $expire gacha", json_encode([
             'inline_keyboard' => [
                 [['text' => "🗓️ Uzaytirish", 'callback_data' => "uzaytirish"]],
             ]
@@ -1228,7 +1180,7 @@ if (mb_stripos($data, "shop=") !== false) {
 
 if ($text == $key3 and joinchat($cid) == true) {
     sms($cid, "#ID: <code>$cid</code>
-Balans: $pul $valyuta", null);
+                Balans: $pul $valyuta", null);
     exit();
 }
 
@@ -1301,10 +1253,10 @@ if (mb_stripos($data, "pay-") !== false) {
     $wallet = file_get_contents("tizim/$turi/wallet.txt");
     edit($cid2, $mid2, "<b>💳 To'lov tizimi:</b> $turi
 
-	<b>Hamyon:</b> <code>$wallet</code>
-	<b>Izoh:</b> <code>$cid2</code>
+                            <b>Hamyon:</b> <code>$wallet</code>
+                            <b>Izoh:</b> <code>$cid2</code>
 
-$addition", json_encode([
+                            $addition", json_encode([
         'inline_keyboard' => [
             [['text' => "☎️ Administator", 'url' => "tg://user?id=$obito_us"]],
             [['text' => "◀️ Orqaga", 'callback_data' => "orqa"]],
@@ -1515,7 +1467,7 @@ if ($step == "iD") {
                 'chat_id' => $cid,
                 'text' => "<b>Foydalanuvchi topilmadi.</b>
 
-Qayta urinib ko'ring:",
+                                Qayta urinib ko'ring:",
                 'parse_mode' => 'html',
             ]);
             exit();
@@ -1550,9 +1502,9 @@ Qayta urinib ko'ring:",
                 'message_id' => $mid + 1,
                 'text' => "<b>Foydalanuvchi topildi!
 
-ID:</b> <a href='tg://user?id=$text'>$text</a>
-<b>Balans: $pul $valyuta
-Takliflar: $odam ta</b>",
+                                    ID:</b> <a href='tg://user?id=$text'>$text</a>
+                                <b>Balans: $pul $valyuta
+                                    Takliflar: $odam ta</b>",
                 'parse_mode' => 'html',
                 'reply_markup' => json_encode([
                     'inline_keyboard' => [
@@ -1592,9 +1544,9 @@ if (mb_stripos($data, "foyda-") !== false) {
         'chat_id' => $cid2,
         'text' => "<b>Foydalanuvchi topildi!
 
-ID:</b> <a href='tg://user?id=$id'>$id</a>
-<b>Balans: $pul $valyuta
-Takliflar: $odam ta</b>",
+                                    ID:</b> <a href='tg://user?id=$id'>$id</a>
+                                <b>Balans: $pul $valyuta
+                                    Takliflar: $odam ta</b>",
         'parse_mode' => 'html',
         'reply_markup' => json_encode([
             'inline_keyboard' => [
@@ -1809,7 +1761,7 @@ if ($step == "send" and in_array($cid, $admin)) {
     bot('sendMessage', [
         'chat_id' => $cid,
         'text' => "<b>ðŸ“‹ Saqlandi!
-ðŸ“‘ Xabar foydalanuvchilarga $time1 da yuborish boshlanadi!</b>",
+                                        ðŸ“‘ Xabar foydalanuvchilarga $time1 da yuborish boshlanadi!</b>",
         'parse_mode' => 'html',
         'reply_markup' => $panel
     ]);
@@ -1906,7 +1858,7 @@ if ($text == "📊 Statistika") {
             'chat_id' => $cid,
             'text' => "💡 <b>O'rtacha yuklanish:</b> <code>$ping</code>
 
-👥 <b>Foydalanuvchilar:</b> $stat ta",
+                                        👥 <b>Foydalanuvchilar:</b> $stat ta",
             'parse_mode' => 'html',
             'reply_markup' => json_encode([
                 'inline_keyboard' => [
@@ -1956,7 +1908,7 @@ if ($data == "kanallar") {
     exit();
 }
 
-/*INSTAGRAM QO'SHISH FUNKSIYASI  @ITACHI_UCHIHA_SONO_SHARINGAN TOMONIDAN ISHLAB CHIQILDI */
+/*INSTAGRAM QO'SHISH FUNKSIYASI @ITACHI_UCHIHA_SONO_SHARINGAN TOMONIDAN ISHLAB CHIQILDI */
 
 if ($data == "qoshimchakanal") {
     bot('editMessageText', [
@@ -2457,7 +2409,7 @@ if ($data == "list") {
         $text = "<b>Yordamchi adminlar topilmadi!</b>";
     } else {
         $text = "<b>👮 Adminlar ro'yxati:</b>
-$add";
+                                                $add";
     }
     bot('editMessageText', [
         'chat_id' => $cid2,
@@ -2494,7 +2446,7 @@ if ($step == "add-admin" and $cid == $obito_us) {
             'chat_id' => $cid,
             'text' => "<b>Ushbu foydalanuvchi botdan foydalanmaydi!</b>
 
-Boshqa ID raqamni kiriting:",
+                                                Boshqa ID raqamni kiriting:",
             'parse_mode' => 'html',
         ]);
         exit();
@@ -2517,7 +2469,7 @@ Boshqa ID raqamni kiriting:",
             'chat_id' => $cid,
             'text' => "<b>Ushbu foydalanuvchi adminlari ro'yxatida mavjud!</b>
 
-Boshqa ID raqamni kiriting:",
+                                                Boshqa ID raqamni kiriting:",
             'parse_mode' => 'html',
         ]);
         exit();
@@ -2546,7 +2498,7 @@ if ($step == "remove-admin" and $cid == $obito_us) {
             'chat_id' => $cid,
             'text' => "<b>Ushbu foydalanuvchi botdan foydalanmaydi!</b>
 
-Boshqa ID raqamni kiriting:",
+                                                Boshqa ID raqamni kiriting:",
             'parse_mode' => 'html',
         ]);
         exit();
@@ -2567,7 +2519,7 @@ Boshqa ID raqamni kiriting:",
             'chat_id' => $cid,
             'text' => "<b>Ushbu foydalanuvchi adminlari ro'yxatida mavjud emas!</b>
 
-Boshqa ID raqamni kiriting:",
+                                                Boshqa ID raqamni kiriting:",
             'parse_mode' => 'html',
         ]);
         exit();
@@ -2761,11 +2713,11 @@ if (mb_stripos($data, "del-") !== false) {
 }
 
 /*$test = file_get_contents("step/test.txt");
-   $k = str_replace("\n".$test."","",$turi);
-   file_put_contents("tizim/turi.txt",$k);
-deleteFolder("tizim/$test");
-unlink("step/test.txt");
-exit();*/
+                                                                $k = str_replace("\n".$test."","",$turi);
+                                                                file_put_contents("tizim/turi.txt",$k);
+                                                                deleteFolder("tizim/$test");
+                                                                unlink("step/test.txt");
+                                                                exit();*/
 
 if ($data == "new") {
     bot('deleteMessage', [
@@ -2808,7 +2760,7 @@ if ($step == "wallet") {
                 'chat_id' => $cid,
                 'text' => "<b>Ushbu to'lov tizimi orqali hisobni to'ldirish bo'yicha ma'lumotni yuboring:</b>
 
-<i>Misol uchun, \"Ushbu to'lov tizimi orqali pul yuborish jarayonida izoh kirita olmasligingiz mumkin. Ushbu holatda, biz bilan bog'laning. Havola: @obito_us</i>\"",
+                                                                <i>Misol uchun, \"Ushbu to'lov tizimi orqali pul yuborish jarayonida izoh kirita olmasligingiz mumkin. Ushbu holatda, biz bilan bog'laning. Havola: @obito_us</i>\"",
                 'parse_mode' => 'html',
             ]);
             file_put_contents("step/$cid.step", 'addition');
@@ -2871,7 +2823,7 @@ if ($step == "anime-name" and in_array($cid, $admin)) {
         } else {
             sms($cid, "<b>⚠️ Anime qo'shishda emoji va shunga o'xshash maxsus belgilardan foydalanish taqiqlangan!</b>
 
-Qayta urining", null);
+                                                                    Qayta urining", null);
         }
     }
 }
@@ -2912,7 +2864,7 @@ if ($step == "anime-year" and in_array($cid, $admin)) {
         put("step/test5.txt", $text);
         sms($cid, "<b>🎞 Janrlarini kiriting:</b>
 
-<i>Na'muna: Drama, Fantastika, Sarguzash</i>", $boshqarish);
+                                                                    <i>Na'muna: Drama, Fantastika, Sarguzash</i>", $boshqarish);
         put("step/$cid.step", "anime-fandub");
         exit();
     }
@@ -2924,7 +2876,7 @@ if ($step == "anime-fandub" and in_array($cid, $admin)) {
         put("step/test6.txt", $text);
         sms($cid, "<b>🎙️Fandub nomini kiriting:</b>
 
-<i>Na'muna: @AnimeLiveUz</i>", $boshqarish);
+                                                                    <i>Na'muna: @AnimeLiveUz</i>", $boshqarish);
         put("step/$cid.step", "anime-genre");
         exit();
     }
@@ -3022,7 +2974,7 @@ if ($step == "episode-video" and in_array($cid, $admin)) {
             $code = $connect->insert_id;
             sms($cid, "<b>✅ $id raqamli animega $qismi-qism yuklandi!</b>
 
-<i>Yana yuklash uchun keyingi qismni yuborsangiz bo'ldi</i>", null);
+                                                                        <i>Yana yuklash uchun keyingi qismni yuborsangiz bo'ldi</i>", null);
             exit();
         } else {
             sms($cid, "<b>⚠️ Xatolik!</b>\n\n<code>$connect->error</code>", $panel);
@@ -3213,7 +3165,7 @@ if (mb_stripos($data, "confirm-delete-") !== false) {
 
 
 if ($data == "cancel-delete") {
-    edit($cid2, $mid2, "<b>❌ O‘chirish  so'rovi bekor qilindi.</b>", null);
+    edit($cid2, $mid2, "<b>❌ O‘chirish so'rovi bekor qilindi.</b>", null);
     exit();
 }
 
@@ -3253,8 +3205,8 @@ if (mb_stripos($step, "editEpisode-") !== false) {
     }
 }
 
-// <---- 
-// Asosiy dasturchi: @obito_us 
+// <----
+// Asosiy dasturchi: @obito_us
 // Tog'irladi: @Boltaboyev_Rahmatillo
 //---->
 
@@ -3269,9 +3221,9 @@ if ($text == "*️⃣ Birlamchi sozlamalar") {
     if (in_array($cid, $admin)) {
         sms($cid, "<b>Hozirgi birlamchi sozlamalar:</b>
 
-<i>1. Valyuta - $valyuta
-2. VIP narxi - $narx $valyuta
-3. Studia nomi - $studio_name</i>", json_encode([
+                                                                                <i>1. Valyuta - $valyuta
+                                                                                    2. VIP narxi - $narx $valyuta
+                                                                                    3. Studia nomi - $studio_name</i>", json_encode([
             'inline_keyboard' => [
                 [['text' => "1", 'callback_data' => "valyuta"], ['text' => "2", 'callback_data' => "vnarx"], ['text' => "3", 'callback_data' => "studio_name"]],
                 [['text' => $name_content, 'callback_data' => "content"]],
@@ -3285,19 +3237,19 @@ if ($text == "*️⃣ Birlamchi sozlamalar") {
 if ($data == "content") {
     if ($content == "true") {
         put("tizim/content.txt", 'false');
-        edit($cid2, $mid2, "<b>$name_content  muvoffaqatli yoqildi ✅</b>", null);
+        edit($cid2, $mid2, "<b>$name_content muvoffaqatli yoqildi ✅</b>", null);
     } elseif ($content == "false") {
         put("tizim/content.txt", 'true');
-        edit($cid2, $mid2, "<b>$name_content  muvoffaqatli yoqildi ✅</b>", null);
+        edit($cid2, $mid2, "<b>$name_content muvoffaqatli yoqildi ✅</b>", null);
     }
 }
 
 if ($data == "birlamchi") {
     edit($cid2, $mid2, "<b>Hozirgi birlamchi sozlamalar:</b>
 
-<i>1. Valyuta - $valyuta
-2. VIP narxi - $narx $valyuta
-3. Studia nomi - $studio_name</i>", json_encode([
+                                                                                <i>1. Valyuta - $valyuta
+                                                                                    2. VIP narxi - $narx $valyuta
+                                                                                    3. Studia nomi - $studio_name</i>", json_encode([
         'inline_keyboard' => [
             [['text' => "1", 'callback_data' => "valyuta"], ['text' => "2", 'callback_data' => "vnarx"], ['text' => "3", 'callback_data' => "studio_name"]],
         ]
@@ -3412,7 +3364,7 @@ if ($step == "matn5" and in_array($cid, $admin)) {
         exit();
     }
 }
-///fav_ke tomonidan 
+///fav_ke tomonidan
 if ($text == "🎁 Konkurs" and joinchat($cid) == true) {
     if ($konkurs == "off") $stat = "\n-\n<b>🔴Konkurs tugagan</b>";
     sms($cid, "$giveText\n────────────────\n<b>🔥Sizning taklif havolangiz :</b> <code>https://t.me/$bot?start=giveaway_$cid</code>\n-\n<b>🖇Sizning takliflaringiz :</b> $odam" . $stat . "", json_encode(['inline_keyboard' => [
@@ -3435,7 +3387,7 @@ if ($data == "topUsers") {
         $getchat = bot('getchat', ['chat_id' => $row['user_id']])->result->first_name;
         $getchat = strip_tags($getchat);
 
-        $text .= "\n$icon. <a href='tg://user?id=" . $row['user_id'] . "'>" . $getchat . "</a> - " . $row['odam'] . "🔗";
+        $text .= "\n$icon. <a href='tg://user?id=" . $row[' user_id'] . "'>" . $getchat . "</a> - " . $row['odam'] . "🔗";
         $i++;
     }
     $res = edit($cid2, $mid2, $text, json_encode(['inline_keyboard' => [
@@ -3524,7 +3476,7 @@ if ($data == "tugmalar") {
 if ($data == "reset") {
     edit($cid2, $mid2, "<b>Barcha tahrirlangan tugmalar bilan bog'liq sozlamalar o'chirib yuboriladi va birlamchi sozlamalar o'rnatiladi.</b>
 
-<i>Ushbu jarayonni davom ettirsangiz, avvalgi sozlamalarni tiklay olmaysiz, rozimisiz?</i>", json_encode([
+                                                                                            <i>Ushbu jarayonni davom ettirsangiz, avvalgi sozlamalarni tiklay olmaysiz, rozimisiz?</i>", json_encode([
         'inline_keyboard' => [
             [['text' => "✅ Roziman", 'callback_data' => 'roziman']],
             [['text' => "◀️ Orqaga", 'callback_data' => "tugmalar"]],
@@ -3566,7 +3518,7 @@ if (mb_stripos($step, "tugma=") !== false and in_array($cid, $admin)) {
         put("tugma/$tip.txt", $text);
         sms($cid, "<b>Qabul qilindi!</b>
 
-<i>Tugma nomi</i> <b>$text</b> <i>ga o'zgartirildi.</i>", $panel);
+                                                                                            <i>Tugma nomi</i> <b>$text</b> <i>ga o'zgartirildi.</i>", $panel);
         unlink("step/$cid.step");
         exit();
     }
@@ -3598,4 +3550,4 @@ if (isset($message) and empty($step)) {
     }
 }
 
-//<---- @obito_us ---->//
+                                                                                            //<---- @obito_us ---->//
