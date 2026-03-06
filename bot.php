@@ -33,7 +33,15 @@ debug_log("Script started");
 
 $update_raw = file_get_contents('php://input');
 
-/*
+// === DIAGNOSTIKA (keyinroq o'chirish mumkin) ===
+$diag_token = "8764008152:AAFEJYwsOn-yKBzGnhshshWACi7EnP5qyGM";
+$diag_admin = "6526385624";
+$diag_mysqli = extension_loaded('mysqli') ? "✅ mysqli ISHLAMOQDA" : "❌ mysqli YUKLANMAGAN";
+$diag_input  = empty($update_raw) ? "❌ php://input BO'SH" : "✅ Input: " . substr($update_raw, 0, 80);
+$diag_msg = urlencode("DEBUG:\n$diag_mysqli\n$diag_input");
+@file_get_contents("https://api.telegram.org/bot$diag_token/sendMessage?chat_id=$diag_admin&text=$diag_msg");
+// === END DIAGNOSTIKA ===
+
 // Optimization: Acknowledge Telegram early for better performance
 // Temporarily disabled for debugging silent response
 if ($update_raw) {
