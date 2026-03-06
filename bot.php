@@ -1,6 +1,9 @@
 <?php
 ob_start();
-error_reporting(0);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', '/tmp/php_errors.log');
 date_Default_timezone_set('Asia/Tashkent');
 
 // Optimization: Acknowledge Telegram early for better performance
@@ -340,28 +343,50 @@ function adminsAlert($message)
 }
 
 $alijonov = json_decode(file_get_contents('php://input'));
-$message = $alijonov->message;
-$data = $alijonov->callback_query->data;
-$qid = $alijonov->callback_query->id;
-$cid2 = $alijonov->callback_query->message->chat->id;
-$mid2 = $alijonov->callback_query->message->message_id;
 
-$uid = $message->from->id ?: $alijonov->callback_query->from->id;
-$cid = $message->chat->id ?: $cid2;
-$chat_id = $data ? $cid2 : $cid;
-$text = $message->text ?: $alijonov->callback_query->message->text;
+// Debug: log incoming update
+file_put_contents('/tmp/tg_update.log', json_encode($alijonov, JSON_PRETTY_PRINT));
+
+$message = $alijonov->message ?? null;
+$callback_query = $alijonov->callback_query ?? null;
+$data = $callback_query->data ?? null;
+$qid = $callback_query->id ?? null;
+$cid2 = $callback_query->message->chat->id ?? null;
+$mid2 = $callback_query->message->message_id ?? null;
+
+if ($message) {
+    $uid = $message->from->id;
+    $cid = $message->chat->id;
+    $text = $message->text ?? "";
+    $message_id = $message->message_id;
+    $name = $message->from->first_name;
+    $familya = $message->from->last_name;
+    $username = $message->from->username;
+} elseif ($callback_query) {
+    $uid = $callback_query->from->id;
+    $cid = $cid2;
+    $text = $callback_query->message->text ?? "";
+    $message_id = $mid2;
+    $name = $callback_query->from->first_name;
+    $familya = $callback_query->from->last_name;
+    $username = $callback_query->from->username;
+} else {
+    // Other types of updates (inline_query, etc.)
+    $uid = null;
+    $cid = null;
+    $text = null;
+    $message_id = null;
+}
+
 $tx = $text;
-$message_id = $message->message_id ?: $mid2;
-
-$name = $message->from->first_name ?: $alijonov->callback_query->from->first_name;
-$familya = $message->from->last_name ?: $alijonov->callback_query->from->last_name;
-$username = $message->from->username ?: $alijonov->callback_query->from->username;
+$chat_id = $data ? $cid2 : $cid;
 $nameru = "<a href='tg://user?id=$uid'>$name $familya</a>";
 
-$step = @file_get_contents("step/$chat_id.step");
+$step = ($chat_id) ? @file_get_contents("step/$chat_id.step") : null;
 
-$photo = $message->photo;
-$file = $photo[count($photo) - 1]->file_id;
+$photo = $message->photo ?? null;
+$file = $photo ? $photo[count($photo) - 1]->file_id : null;
+
 
 // Optimization: Load keys and settings once to reduce file I/O
 $key1 = @file_get_contents("tugma/key1.txt") ?: "🔎 Anime izlash";
