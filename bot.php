@@ -3,8 +3,26 @@ ob_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
-ini_set('error_log', '/tmp/php_errors.log');
 date_Default_timezone_set('Asia/Tashkent');
+
+// Detailed logging function
+function debug_log($message)
+{
+    error_log("[BOT_DEBUG] " . $message);
+}
+
+// Global Exception Handler
+set_exception_handler(function ($e) {
+    debug_log("Uncaught Exception: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
+});
+
+// Global Error Handler
+set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+    debug_log("Error [$errno]: $errstr in $errfile on line $errline");
+    return false; // Let standard error handler run as well
+});
+
+debug_log("Script started");
 
 $update_raw = file_get_contents('php://input');
 
@@ -247,9 +265,13 @@ function bot($method, $datas = [])
     curl_setopt($ch, CURLOPT_POSTFIELDS, $datas);
     $res = curl_exec($ch);
     if (curl_error($ch)) {
-        var_dump(curl_error($ch));
+        debug_log("CURL Error in $method: " . curl_error($ch));
     } else {
-        return json_decode($res);
+        $data = json_decode($res);
+        if (!$data || !$data->ok) {
+            debug_log("Telegram Error in $method: " . $res);
+        }
+        return $data;
     }
 }
 
@@ -349,8 +371,9 @@ function adminsAlert($message)
 
 $alijonov = json_decode($update_raw);
 
-// Debug: log incoming update
-file_put_contents('/tmp/tg_update.log', json_encode($alijonov, JSON_PRETTY_PRINT));
+if (!$alijonov) {
+    debug_log("Failed to decode JSON. Raw input: " . substr($update_raw, 0, 100));
+}
 
 $message = $alijonov->message ?? null;
 $callback_query = $alijonov->callback_query ?? null;
@@ -363,6 +386,7 @@ if ($message) {
     $uid = $message->from->id;
     $cid = $message->chat->id;
     $text = $message->text ?? "";
+    debug_log("Incoming Message - ID: $uid, Text: $text");
     $message_id = $message->message_id;
     $name = $message->from->first_name;
     $familya = $message->from->last_name;
@@ -371,12 +395,13 @@ if ($message) {
     $uid = $callback_query->from->id;
     $cid = $cid2;
     $text = $callback_query->message->text ?? "";
+    debug_log("Incoming Callback - ID: $uid, Data: $data");
     $message_id = $mid2;
     $name = $callback_query->from->first_name;
     $familya = $callback_query->from->last_name;
     $username = $callback_query->from->username;
 } else {
-    // Other types of updates (inline_query, etc.)
+    debug_log("Incoming Update (Other/Unknown)");
     $uid = null;
     $cid = null;
     $text = null;
