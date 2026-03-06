@@ -268,7 +268,7 @@ function process_anime($cid, $id)
             'protect_content' => $content,
         ]);
     } else {
-        sms($cid, "<!--  -->❌ Ma'lumot topilmadi.");
+        sms($cid, "<!--  -->❌ Ma'lumot topilmadi.", null);
     }
 }
 
