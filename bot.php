@@ -6,14 +6,19 @@ ini_set('log_errors', 1);
 ini_set('error_log', '/tmp/php_errors.log');
 date_Default_timezone_set('Asia/Tashkent');
 
+$update_raw = file_get_contents('php://input');
+
+/*
 // Optimization: Acknowledge Telegram early for better performance
-if (file_get_contents('php://input')) {
+// Temporarily disabled for debugging silent response
+if ($update_raw) {
     ignore_user_abort(true);
     set_time_limit(0);
     if (function_exists('fastcgi_finish_request')) {
         fastcgi_finish_request();
     }
 }
+*/
 
 /*
 @ITACHI_UCHIHA_SONO_SHARINGAN
@@ -342,7 +347,7 @@ function adminsAlert($message)
     }
 }
 
-$alijonov = json_decode(file_get_contents('php://input'));
+$alijonov = json_decode($update_raw);
 
 // Debug: log incoming update
 file_put_contents('/tmp/tg_update.log', json_encode($alijonov, JSON_PRETTY_PRINT));
