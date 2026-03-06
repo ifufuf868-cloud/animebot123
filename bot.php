@@ -8,6 +8,10 @@ date_Default_timezone_set('Asia/Tashkent');
 // Detailed logging function
 function debug_log($message)
 {
+    $log_file = __DIR__ . "/admin/bot_debug.log";
+    if (!is_dir(__DIR__ . "/admin")) @mkdir(__DIR__ . "/admin");
+    $log_message = "[" . date("Y-m-d H:i:s") . "] [BOT_DEBUG] " . $message . PHP_EOL;
+    file_put_contents($log_file, $log_message, FILE_APPEND);
     error_log("[BOT_DEBUG] " . $message);
 }
 

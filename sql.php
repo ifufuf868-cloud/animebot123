@@ -6,7 +6,17 @@ $password = getenv('MYSQLPASSWORD') ?: "baza_paroli";
 $database = getenv('MYSQLDATABASE') ?: $username;
 $port = getenv('MYSQLPORT') ?: "3306";
 
-$connect = mysqli_connect($servername, $username, $password, $database, $port);
+try {
+  $connect = mysqli_connect($servername, $username, $password, $database, $port);
+  if (!$connect) {
+    throw new Exception(mysqli_connect_error());
+  }
+} catch (Exception $e) {
+  if (function_exists('debug_log')) {
+    debug_log("Database Connection Failed: " . $e->getMessage());
+  }
+  die("Database Connection Error");
+}
 
 mysqli_query($connect, "CREATE TABLE IF NOT EXISTS `user_id` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
