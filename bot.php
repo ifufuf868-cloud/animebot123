@@ -1,17 +1,19 @@
 <?php
-ob_start();
+// Send immediate 200 OK to Telegram so it doesn't retry
+http_response_code(200);
+header('Content-Type: application/json');
+echo json_encode(['ok' => true]);
+if (ob_get_level()) ob_end_flush();
+flush();
+
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 date_Default_timezone_set('Asia/Tashkent');
 
 // Detailed logging function
 function debug_log($message)
 {
-    $log_file = __DIR__ . "/admin/bot_debug.log";
-    if (!is_dir(__DIR__ . "/admin")) @mkdir(__DIR__ . "/admin");
-    $log_message = "[" . date("Y-m-d H:i:s") . "] [BOT_DEBUG] " . $message . PHP_EOL;
-    file_put_contents($log_file, $log_message, FILE_APPEND);
     error_log("[BOT_DEBUG] " . $message);
 }
 
@@ -24,7 +26,7 @@ set_exception_handler(function ($e) {
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     if (!(error_reporting() & $errno)) return false;
     debug_log("Error [$errno]: $errstr in $errfile on line $errline");
-    return false; // Let standard error handler run as well
+    return false;
 });
 
 debug_log("Script started");
