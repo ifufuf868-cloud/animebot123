@@ -1,8 +1,12 @@
-FROM dunglas/frankenphp
+FROM dunglas/frankenphp:latest
 
+# Install mysqli and pdo_mysql extensions
 RUN install-php-extensions mysqli pdo_mysql
 
-WORKDIR /app
+# Set the document root to /app
+ENV SERVER_NAME=":80"
+
+# Copy the application code
 COPY . /app
 
-CMD sh -c 'SERVER_NAME=":${PORT:-8080}" frankenphp run --config /etc/caddy/Caddyfile --adapter caddyfile'
+# No custom CMD, use the default one from frankenphp image
