@@ -1,0 +1,51 @@
+# Core Framework
+fastapi==0.109.0
+uvicorn==0.27.0
+starlette==0.35.1
+python-multipart==0.0.6
+
+# Database
+psycopg2-binary==2.9.11
+
+# Auth & Security
+PyJWT==2.8.0
+cryptography==42.0.0
+python-dotenv==1.2.1
+
+# Validation
+pydantic==2.5.3
+pydantic_core==2.14.6
+email-validator==2.1.0
+annotated-types==0.7.0
+
+# Async & HTTP
+aiohttp
+anyio==4.11.0
+httptools==0.7.1
+websockets==15.0.1
+watchfiles==1.1.1
+
+# Utils
+PyYAML==6.0.3
+typing_extensions==4.15.0
+sniffio==1.3.1
+h11==0.16.0
+idna==3.11
+dnspython==2.8.0
+click==8.3.0
+colorama==0.4.6
+certifi
+urllib3
+
+# Telegram
+telethon
+
+# Payments
+resend
+tspay-client
+
+# Firebase Push Notifications
+firebase-admin>=6.2.0
+
+# Supabase S3 Storage
+boto3>=1.34.0
